@@ -8,7 +8,7 @@ public:
   virtual void fit(vector<tuple<Types...>> data, vector<T> targets);
   T predict(tuple<Types...> vector);
   vector<T> predict(vector<tuple<Types...>> data);
-private:
+protected:
   vector<Double> weights;
 }
 
