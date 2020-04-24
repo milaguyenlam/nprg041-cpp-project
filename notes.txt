@@ -24,3 +24,10 @@ class LogisticRegression<T> : Model<T> {
 - method convert_to(), convert_from()
 - implement different Model<Int>, Model<Time>,...
 - typeof() swtich/case
+
+//Actual conversion
+- casting? - (double)int_variable
+
+//Regularization and other modifications done via method chaining
+- new Model().Regularized(lambda = 2)
+
