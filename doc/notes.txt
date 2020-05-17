@@ -23,7 +23,7 @@ class LogisticRegression<T> : Model<T> {
 //Type conversion??? 
 - method convert_to(), convert_from()
 - implement different Model<Int>, Model<Time>,...
-- typeof() swtich/case
+- typeof() switch/case
 
 //Actual conversion
 - casting? - (double)int_variable
