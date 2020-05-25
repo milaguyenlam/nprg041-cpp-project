@@ -31,3 +31,9 @@ class LogisticRegression<T> : Model<T> {
 //Regularization and other modifications done via method chaining
 - new Model().Regularized(lambda = 2)
 
+//questions:
+- how to implement convertFromDouble() X
+- how to check if given type in tuple is valid - constraints, concepts X
+- how to implement generic methods and classes(declared in .hpp) in .cpp X
+- is there a way to constrain types in generics (runtime vs. compile-time) 
+- virtual/abstract classes implementation? X
