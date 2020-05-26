@@ -6,7 +6,7 @@ using Vector = vector<double>;
 using Matrix = vector<Vector>;
 
 template <typename T>
-concept SupportedType = is_same<T, int>::value || is_same<T, double>::value || is_same<T, float>::value || is_same<T, long>::value;
+concept Supported = is_same<T, int>::value || is_same<T, double>::value || is_same<T, float>::value || is_same<T, long>::value;
 
 double convertToDouble(int value)
 {
@@ -23,7 +23,7 @@ double convertToDouble(long value)
     return (double)value;
 };
 
-template <SupportedType T>
+template <Supported T>
 T convertFromDouble(double value)
 {
 }
@@ -55,7 +55,7 @@ long convertFromDouble<long>(double value)
 //TODO: add time_point conversion support
 //TODO: refactor complex convert methods
 
-template <SupportedType... InputTypes>
+template <Supported... InputTypes>
 Matrix convertToMatrix(const vector<tuple<InputTypes...>> &input_tuple_matrix)
 {
     Matrix converted_matrix;
@@ -68,7 +68,7 @@ Matrix convertToMatrix(const vector<tuple<InputTypes...>> &input_tuple_matrix)
     return converted_matrix;
 }
 
-template <SupportedType TargetType>
+template <Supported TargetType>
 Vector convertToVector(const vector<TargetType> &input_vector)
 {
     Vector converted_vector;
@@ -103,7 +103,7 @@ void fmap(Vector &vector, const tuple<Types...> &tuple)
     return fmap_impl<0, Types...>(vector, tuple);
 }
 
-template <SupportedType... InputTypes>
+template <Supported... InputTypes>
 Vector convertToVector(const tuple<InputTypes...> &input_tuple)
 {
     Vector converted_vector;

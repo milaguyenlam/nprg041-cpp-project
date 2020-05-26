@@ -4,8 +4,8 @@
 #include "convert_util.hpp"
 using namespace std;
 
-template <typename T>
-concept Supported = is_same<T, int>::value || is_same<T, double>::value || is_same<T, float>::value || is_same<T, long>::value;
+// template <typename T>
+// concept Supported = is_same<T, int>::value || is_same<T, double>::value || is_same<T, float>::value || is_same<T, long>::value;
 
 using vector_double = vector<double>;
 using matrix_double = vector<vector_double>;
@@ -17,7 +17,7 @@ class Model
 {
 protected:
     vector<double> weights;
-    virtual vector_double training_algorithm(const matrix_double &data, const vector_double &targets) = 0;
+    virtual void training_algorithm(const matrix_double &data, const vector_double &targets) = 0;
 
 public:
     //overload for multiple target types instead of having a generic class??
@@ -49,7 +49,7 @@ template <Supported TargetType, Supported... InputTypes>
 class LinearRegression : public Model<TargetType, InputTypes...>
 {
 protected:
-    vector_double training_algorithm(const matrix_double &data, const vector_double &targets) override
+    void training_algorithm(const matrix_double &data, const vector_double &targets) override
     {
     }
 };
@@ -59,7 +59,7 @@ template <Supported TargetType, Supported... InputTypes>
 class LogisticRegression : public Model<TargetType, InputTypes...>
 {
 protected:
-    vector_double training_algorithm(const matrix_double &data, const vector_double &targets) override
+    void training_algorithm(const matrix_double &data, const vector_double &targets) override
     {
     }
 };
@@ -69,7 +69,7 @@ template <Supported TargetType, Supported... InputTypes>
 class SVM : public Model<TargetType, InputTypes...>
 {
 protected:
-    vector_double training_algorithm(const matrix_double &data, const vector_double &targets) override
+    void training_algorithm(const matrix_double &data, const vector_double &targets) override
     {
     }
 };
