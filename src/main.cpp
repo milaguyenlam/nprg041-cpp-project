@@ -6,14 +6,14 @@ using namespace std;
 
 int main()
 {
-    vector<tuple<double, double, double>> dataset;
-    vector<double> targets;
+    vector<tuple<int, double, double>> dataset;
+    vector<int> targets;
     for (double i = 0; i < 100; i++)
     {
-        dataset.push_back(make_tuple(i, i + 1, i + 2));
-        targets.push_back(i);
+        dataset.push_back(make_tuple((int)i, i + 1, i + 2));
+        targets.push_back((int)i);
     }
 
-    LinearRegression<double, double, double, double> model;
+    LinearRegression<int, int, double, double> model;
     model.fit(dataset, targets);
 }
