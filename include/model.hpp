@@ -3,12 +3,14 @@
 #include <string>
 #include <iostream>
 #include "convert_util.hpp"
-using namespace std;
 
+using namespace std;
 using vector_double = vector<double>;
 using matrix_double = vector<vector_double>;
 
-//TODO: test if all matrices are square
+//TODO: rewrite Model class to support only Eigen data structures
+//TODO: add virtual destructor to Model class
+//TODO: add include guards
 
 template <Supported TargetType, Supported... InputTypes>
 class Model
@@ -37,6 +39,7 @@ public:
 
     vector<TargetType> predict(const vector<tuple<InputTypes...>> &predict_vectors) const
     {
+
         matrix_double converted_vectors = convertToMatrix<InputTypes...>(predict_vectors);
         //convert tuples into vector<double> and compute dot product of a given vector and weights
         //convert result into TargetType and return
@@ -78,7 +81,6 @@ protected:
                 //eweights = eweights - learning_rate * ((evector.transpose() * eweights - etarget) * evector + lambda * eweights);
             }
         }
-
         cout << eweights << endl;
     }
 
