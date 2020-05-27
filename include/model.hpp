@@ -4,120 +4,121 @@
 #include <iostream>
 #include "convert_util.hpp"
 
-using namespace std;
-using vector_double = vector<double>;
-using matrix_double = vector<vector_double>;
+using Vector1d = Eigen::Matrix<double, 1, 1>;
 
-//TODO: rewrite Model class to support only Eigen data structures
-//TODO: add virtual destructor to Model class
 //TODO: add include guards
+//TODO: consider deduction guides
 
-template <Supported TargetType, Supported... InputTypes>
 class Model
 {
 protected:
-    vector<double> weights;
-    virtual void training_algorithm(const matrix_double &data, const vector_double &targets) = 0;
+    Eigen::VectorXd weights;
+    virtual void training_algorithm(const Eigen::MatrixXd &data, const Eigen::VectorXd &targets) = 0;
 
 public:
-    //overload for multiple target types instead of having a generic class??
-    void fit(const vector<tuple<InputTypes...>> &training_data, const vector<TargetType> &training_targets)
+    virtual ~Model()
     {
-        matrix_double converted_data = convertToMatrix<InputTypes...>(training_data);
-        vector_double converted_targets = convertToVector<TargetType>(training_targets);
-        training_algorithm(converted_data, converted_targets);
+    }
+    void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXd &training_targets)
+    {
+        training_algorithm(training_data, training_targets);
     }
 
-    //TODO: implement predict() methods
-    TargetType predict(const tuple<InputTypes...> &predict_vector) const
+    Vector1d predict(const Eigen::VectorXd &predict_vector) const
     {
-        vector_double converted_vector = convertToVector<InputTypes...>(predict_vector);
-
-        //convert tuple into vector<double> and compute dot product of given vector and weights
-        //convert result into TargetType and return
+        return predict_vector.transpose() * weights;
     }
 
-    vector<TargetType> predict(const vector<tuple<InputTypes...>> &predict_vectors) const
+    Eigen::VectorXd predict(const Eigen::MatrixXd &predict_vectors) const
     {
-
-        matrix_double converted_vectors = convertToMatrix<InputTypes...>(predict_vectors);
-        //convert tuples into vector<double> and compute dot product of a given vector and weights
-        //convert result into TargetType and return
+        return predict_vectors.transpose() * weights;
     }
 };
 
-//TODO: implement Linear Regression algorithm
-template <Supported TargetType, Supported... InputTypes>
-class LinearRegression : public Model<TargetType, InputTypes...>
+template <Supported TargetType, Supported... TupleTypes>
+class ModelConvertProxy
+{
+private:
+    Model &model;
+
+public:
+    ModelConvertProxy(Model &model_to_wrap) : model(model_to_wrap)
+    {
+    }
+
+    void fit(const std::vector<std::tuple<TupleTypes...>> &data, const std::vector<TargetType> &targets)
+    {
+        auto converted_data = convert_from_std<TupleTypes...>(data);
+        auto converted_targets = convert_from_std<TargetType>(targets);
+        model.fit(converted_data, converted_targets);
+    }
+
+    TargetType predict(const std::tuple<TupleTypes...> &tuple)
+    {
+        auto converted_vector = convert_from_std<TupleTypes...>(tuple);
+        Vector1d value = model.predict(converted_vector);
+        TargetType ret_value = convert_to_std<TargetType>(value[0]);
+        return ret_value;
+    }
+
+    std::vector<TargetType> predict(const std::vector<std::tuple<TupleTypes...>> &tuples)
+    {
+        auto converted_matrix = convert_from_std<TupleTypes...>(tuples);
+        auto value_vector = model.predict(converted_matrix);
+        std::vector<TargetType> ret_values = convert_to_std<TargetType>(value_vector);
+        return ret_values;
+    }
+};
+
+//TODO: implement method chaining?
+class LinearRegression : public Model
 {
 private:
     double lambda = 0;
-    int iterations = 100;
+    std::size_t iterations = 100;
     double learning_rate = 0.001;
 
 protected:
-    void training_algorithm(const matrix_double &data, const vector_double &targets) override
+    void training_algorithm(const Eigen::MatrixXd &data, const Eigen::VectorXd &targets) override
     {
-        Vector etargets = convertToEigen(targets);
-        Matrix edata = convertToEigen(data);
-        size_t data_length = targets.size();
-        size_t weights_lenght = edata.rows();
-        Vector eweights(weights_lenght);
-        eweights.setZero();
+        std::size_t input_vector_dimension = data.rows();
+        std::size_t input_data_length = data.cols();
+        weights = Eigen::VectorXd(input_vector_dimension).setZero();
 
-        for (int i = 0; i < iterations; i++)
+        for (std::size_t iter = 0; iter < iterations; iter++)
         {
-            for (size_t j = 0; j < data_length; j++)
+            for (std::size_t i = 0; i < input_data_length; i++)
             {
-                auto evector = edata.col(j);
-                auto etarget = etargets.row(j);
-                auto res = evector.transpose() * eweights - etarget;
-                auto res2 = lambda * eweights;
-                auto res3 = res * evector.transpose();
-                auto res4 = learning_rate * (res3.transpose() + res2);
-                auto res5 = eweights - res4;
-                eweights = res5;
-                //cout << eweights << endl;
-                //eweights = eweights - learning_rate * ((evector.transpose() * eweights - etarget) * evector + lambda * eweights);
+                Eigen::VectorXd input_vector = data.col(i);
+                double target = targets(i);
+                auto prediction = input_vector.transpose() * weights;
+                auto regularization = lambda * weights;
+                auto error = prediction - target;
+                auto step = learning_rate * (error * input_vector) + regularization;
+                weights = weights - step;
             }
         }
-        cout << eweights << endl;
     }
 
 public:
-    LinearRegression with_regulatization(double lambda)
+    ~LinearRegression() override
     {
-        this.lambda = lambda;
-        return this;
     }
-    LinearRegression set_iterations(int iterations)
+    LinearRegression &with_L2_regulatization(double new_lambda)
     {
-        this.iterations = iterations;
-        return this;
+        lambda = new_lambda;
+        return *this;
     }
-    LinearRegression set_learning_rate(double alpha)
+    LinearRegression &set_iterations(std::size_t new_iterations)
+    {
+        iterations = new_iterations;
+        return *this;
+    }
+    LinearRegression &set_learning_rate(double alpha)
     {
         learning_rate = alpha;
-        return this;
+        return *this;
     }
 };
 
-//TODO: implement Logistic Regression algorithm
-template <Supported TargetType, Supported... InputTypes>
-class LogisticRegression : public Model<TargetType, InputTypes...>
-{
-protected:
-    void training_algorithm(const matrix_double &data, const vector_double &targets) override
-    {
-    }
-};
-
-//TODO: implement SVM algorithm
-template <Supported TargetType, Supported... InputTypes>
-class SVM : public Model<TargetType, InputTypes...>
-{
-protected:
-    void training_algorithm(const matrix_double &data, const vector_double &targets) override
-    {
-    }
-};
+//TODO: implement SVM and Logistic Regression classes
