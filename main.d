@@ -1,5 +1,5 @@
-obj/main.o: src/main.cpp src/../include/model.hpp \
- src/../include/convert_util.hpp src/../include/Eigen/Core \
+obj/main.o: src/main.cpp src/../include/convert_util.hpp \
+ src/../include/Eigen/Core \
  src/../include/Eigen/src/Core/util/DisableStupidWarnings.h \
  src/../include/Eigen/src/Core/util/Macros.h \
  src/../include/Eigen/src/Core/util/MKL_support.h \

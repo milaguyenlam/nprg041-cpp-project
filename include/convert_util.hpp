@@ -3,10 +3,13 @@
 #include "Eigen/Core"
 
 //TODO: convert_to<time_point>() implementation
+//TODO: std::time_t support?
+template <typename T>
+concept SupportedTimePoints = std::is_same<typename T::clock, std::chrono::high_resolution_clock>::value;
 
 template <typename T>
 concept Supported =
-    std::is_same<T, int>::value || std::is_same<T, double>::value || std::is_same<T, float>::value || std::is_same<T, long>::value;
+    std::is_same<T, int>::value || std::is_same<T, double>::value || std::is_same<T, float>::value || std::is_same<T, long>::value || SupportedTimePoints<T>;
 
 //Helper methods
 template <class Type>
@@ -19,6 +22,7 @@ template <size_t I, class... Types>
 void iterate_recursively_and_push_value(std::vector<double> &vector, const std::tuple<Types...> &tuple)
 {
     push_value_to_vector(vector, std::get<I>(tuple));
+
     if constexpr (I + 1 < sizeof...(Types))
     {
         return iterate_recursively_and_push_value<I + 1, Types...>(vector, tuple);
@@ -40,50 +44,23 @@ double convert_from(From value)
     return (double)value;
 }
 
-template <class Clock>
-double convert_from(const std::chrono::time_point<Clock> &value)
+template <class Clock, class Duration>
+double convert_from(const std::chrono::time_point<Clock, Duration> &value)
 {
     return value.time_since_epoch().count();
 }
 
-template <typename To>
-struct ConvertTo;
-
-template <typename To>
-struct ConvertTo
+template <Supported To>
+To convert_to(double value)
 {
-    using return_type = To;
-};
-
-template <>
-struct ConvertTo<std::chrono::system_clock>
-{
-    using return_type = std::chrono::time_point<std::chrono::system_clock>;
-};
-
-template <>
-struct ConvertTo<std::chrono::steady_clock>
-{
-    using return_type = std::chrono::time_point<std::chrono::steady_clock>;
-};
-
-//is overriden, should never be called
-template <typename To>
-ConvertTo<To>::return_type convert_to(double value)
-{
-    return (typename ConvertTo<To>::return_type)value;
-}
-
-template <>
-std::chrono::time_point<std::chrono::system_clock> convert_to<std::chrono::system_clock>(double value)
-{
-    using Duration = typename std::chrono::system_clock::duration;
-}
-
-template <>
-std::chrono::time_point<std::chrono::steady_clock> convert_to<std::chrono::steady_clock>(double value)
-{
-    using Duration = typename std::chrono::steady_clock::duration;
+    if constexpr (SupportedTimePoints<To>)
+    {
+        std::cout << "HOTOVO\n";
+    }
+    else
+    {
+        return (To)value;
+    }
 }
 
 template <Supported From>
@@ -105,7 +82,7 @@ std::vector<To> convert_to_std(const Eigen::VectorXd &vector)
     size_t vector_lenght = vector.rows();
     for (size_t i = 0; i < vector_lenght; i++)
     {
-        To value = convert_to_std<To>(vector[i]);
+        To value = convert_to<To>(vector[i]);
         svector.push_back(value);
     }
     return svector;
@@ -118,12 +95,6 @@ Eigen::VectorXd convert_from_std(const std::tuple<From...> &tuple)
     push_converted_data_to_vector(vector, tuple);
     Eigen::VectorXd evector = convert_from_std<double>(vector);
     return evector;
-}
-
-//unnecessary??
-template <Supported... To>
-std::tuple<To...> convert_to_std(const Eigen::VectorXd &vector)
-{
 }
 
 template <Supported From>
@@ -141,11 +112,6 @@ Eigen::MatrixXd convert_from_std(const std::vector<std::vector<From>> &matrix)
         }
     }
     return m;
-}
-
-template <Supported To>
-std::vector<std::vector<To>> convert_to_std(const Eigen::MatrixXd &matrix)
-{
 }
 
 template <Supported... From>
@@ -167,150 +133,3 @@ Eigen::MatrixXd convert_from_std(const std::vector<std::tuple<From...>> &tuples)
 
     return ret_matrix;
 }
-
-template <Supported... To>
-std::vector<std::tuple<To...>> convert_to_std(const Eigen::MatrixXd &vector)
-{
-}
-
-// double convertToDouble(int value)
-// {
-//     return (double)value;
-// };
-
-// double convertToDouble(double value)
-// {
-//     return value;
-// };
-
-// double convertToDouble(long value)
-// {
-//     return (double)value;
-// };
-
-// template <Supported T>
-// T convertFromDouble(double value)
-// {
-// }
-
-// template <>
-// int convertFromDouble<int>(double value)
-// {
-//     return (int)value;
-// }
-
-// template <>
-// double convertFromDouble<double>(double value)
-// {
-//     return value;
-// }
-
-// template <>
-// float convertFromDouble<float>(double value)
-// {
-//     return (float)value;
-// }
-
-// template <>
-// long convertFromDouble<long>(double value)
-// {
-//     return (long)value;
-// }
-
-// template <Supported... InputTypes>
-// Matrix convert_to_eigen(const vector<tuple<InputTypes...>> &input_tuple_matrix)
-// {
-//     std::vector<std::vector<double>> matrix = convert_to_vector<InputTypes...>(input_tuple_matrix);
-//     Matrix result_matrix = convert_to_eigen(matrix);
-//     return result_matrix;
-// }
-
-// template <Supported... InputTypes>
-// Matrix convert_to_eigen(const vector<tuple<InputTypes...>> &input_tuple_matrix)
-// {
-//     std::vector<std::vector<double>> matrix = convert_to_vector<InputTypes...>(input_tuple_matrix);
-//     Matrix result_matrix = convert_to_eigen(matrix);
-//     return result_matrix;
-// }
-
-// template <Supported... InputTypes>
-// std::vector<std::vector<double>> convert_to_vector(const vector<tuple<InputTypes...>> &input_tuple_matrix)
-// {
-//     std::vector<std::vector<double>> converted_matrix;
-//     for (auto it = input_tuple_matrix.begin(); it != input_tuple_matrix.end(); it++)
-//     {
-//         tuple<InputTypes...> input_tuple = *it;
-//         std::vector<double> converted_vector = convertToVector<InputTypes...>(input_tuple);
-//         converted_matrix.push_back(converted_vector);
-//     }
-//     return converted_matrix;
-// }
-
-// template <Supported TargetType>
-// std::vector<double> convertToVector(const vector<TargetType> &input_vector)
-// {
-//     std::vector<double> converted_vector;
-//     for (auto it = input_vector.begin(); it != input_vector.end(); it++)
-//     {
-//         double converted_value = convertToDouble(*it);
-//         converted_vector.push_back(converted_value);
-//     }
-//     return converted_vector;
-// }
-
-// //TODO: hide helper methods
-
-// Matrix convert_to_eigen(const std::vector<std::vector<double>> &matrix)
-// {
-//     size_t columns = matrix.size();
-//     size_t rows = matrix[0].size(); //should be checked for every element
-//     Matrix m(rows, columns);
-//     for (size_t i = 0; i < columns; i++)
-//     {
-//         std::vector<double> vector = matrix[i];
-//         for (size_t j = 0; j < rows; j++)
-//         {
-//             m(j, i) = vector[j];
-//         }
-//     }
-//     return m;
-// }
-
-// Vector convert_to_eigen(const std::vector<double> &vector)
-// {
-//     size_t vector_size = vector.size();
-//     Vector v(vector_size);
-//     for (size_t i = 0; i < vector_size; i++)
-//     {
-//         v[i] = vector[i];
-//     }
-//     return v;
-// }
-
-// std::vector<std::vector<double>> convert_from_eigen(const Matrix &matrix)
-// {
-//     size_t columns = matrix.cols();
-//     size_t rows = matrix.rows();
-//     std::vector<std::vector<double>> mat;
-//     for (size_t i = 0; i < columns; i++)
-//     {
-//         std::vector<double> vec;
-//         for (size_t j = 0; j < rows; j++)
-//         {
-//             vec.push_back(matrix(j, i));
-//         }
-//         mat.push_back(vec);
-//     }
-//     return mat;
-// }
-
-// std::vector<double> convert_from_eigen(const Vector &vector)
-// {
-//     size_t vector_size = vector.size();
-//     std::vector<double> v;
-//     for (size_t i = 0; i < vector_size; i++)
-//     {
-//         v.push_back(vector[i]);
-//     }
-//     return v;
-// }
