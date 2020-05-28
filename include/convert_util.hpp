@@ -5,7 +5,8 @@
 //TODO: convert_to<time_point>() implementation
 //TODO: std::time_t support?
 template <typename T>
-concept SupportedTimePoints = std::is_same<typename T::clock, std::chrono::high_resolution_clock>::value;
+concept SupportedTimePoints =
+    std::is_same_v<T, std::chrono::time_point<typename T::clock, typename T::duration>>;
 
 template <typename T>
 concept Supported =
@@ -47,7 +48,7 @@ double convert_from(From value)
 template <class Clock, class Duration>
 double convert_from(const std::chrono::time_point<Clock, Duration> &value)
 {
-    return value.time_since_epoch().count();
+    return (double)value.time_since_epoch().count();
 }
 
 template <Supported To>
@@ -55,7 +56,11 @@ To convert_to(double value)
 {
     if constexpr (SupportedTimePoints<To>)
     {
-        std::cout << "HOTOVO\n";
+        using clock = typename To::clock;
+        using duration = typename To::duration;
+        duration dur((long)value);
+        To time(dur);
+        return time;
     }
     else
     {
