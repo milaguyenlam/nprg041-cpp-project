@@ -17,15 +17,43 @@ class Model
 {
 protected:
     Eigen::MatrixXd weights;
-    Eigen::MatrixXd pad_dataset_with_ones(const Eigen::MatrixXd &dataset)
+    Eigen::MatrixXd pad_matrix_with_ones(const Eigen::MatrixXd &dataset) const
     {
-        Eigen::MatrixXd padded_matrix(dataset.rows() + 1, dataset.cols());
-        padded_matrix << dataset;
-        for (size_t i = 0; i < dataset.cols(); i++)
+        std::size_t rows = dataset.rows();
+        std::size_t cols = dataset.cols();
+        Eigen::MatrixXd padded_matrix(rows + 1, cols);
+        for (size_t i = 0; i < rows + 1; i++)
         {
-            padded_matrix << 1;
+            for (size_t j = 0; j < cols; j++)
+            {
+                if (i == rows)
+                {
+                    padded_matrix(i, j) = 1.0;
+                }
+                else
+                {
+                    padded_matrix(i, j) = dataset(i, j);
+                }
+            }
         }
         return padded_matrix;
+    }
+    Eigen::VectorXd pad_vector_with_ones(const Eigen::VectorXd &vector) const
+    {
+        std::size_t size = vector.size();
+        Eigen::VectorXd padded_vector(size + 1);
+        for (size_t i = 0; i < size + 1; i++)
+        {
+            if (i == size)
+            {
+                padded_vector[i] = 1.0;
+            }
+            else
+            {
+                padded_vector[i] = vector[i];
+            }
+        }
+        return padded_vector;
     }
 
 public:
@@ -46,7 +74,7 @@ public:
     }
     void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXi &training_targets)
     {
-        auto padded_data = pad_dataset_with_ones(training_data);
+        auto padded_data = pad_matrix_with_ones(training_data);
         //TODO: map targets to inner targets
         training_algorithm(padded_data, training_targets);
     }
@@ -58,6 +86,8 @@ class RegressionModel : public Model
 {
 protected:
     virtual void training_algorithm(const Eigen::MatrixXd &dataset, const Eigen::VectorXd &targets) = 0;
+    virtual Vector1d make_prediction(const Eigen::VectorXd &vector) const = 0;
+    virtual Eigen::VectorXd make_prediction(const Eigen::MatrixXd &vectors) const = 0;
 
 public:
     virtual ~RegressionModel()
@@ -65,11 +95,19 @@ public:
     }
     void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXd &training_targets)
     {
-        auto padded_data = pad_dataset_with_ones(training_data);
+        auto padded_data = pad_matrix_with_ones(training_data);
         training_algorithm(padded_data, training_targets);
     }
-    virtual Vector1d predict(const Eigen::VectorXd &vector) const = 0;
-    virtual Eigen::VectorXd predict(const Eigen::MatrixXd &vectors) const = 0;
+    Vector1d predict(const Eigen::VectorXd &vector) const
+    {
+        auto padded_vector = pad_vector_with_ones(vector);
+        return make_prediction(padded_vector);
+    }
+    Eigen::VectorXd predict(const Eigen::MatrixXd &vectors) const
+    {
+        auto padded_vectors = pad_matrix_with_ones(vectors);
+        return make_prediction(padded_vectors);
+    }
 };
 
 class LinearRegression : public RegressionModel
@@ -93,7 +131,7 @@ protected:
             {
                 Eigen::VectorXd input_vector = data.col(i);
                 double target = targets(i);
-                auto prediction = input_vector.transpose() * weights;
+                auto prediction = (input_vector.transpose() * weights)(0, 0);
                 auto regularization = lambda * weights;
                 auto error = prediction - target;
                 auto step = learning_rate * (error * input_vector) + regularization;
@@ -101,18 +139,20 @@ protected:
             }
         }
     }
+    Vector1d make_prediction(const Eigen::VectorXd &vector) const override
+    {
+
+        return vector.transpose() * weights;
+    }
+    Eigen::VectorXd make_prediction(const Eigen::MatrixXd &vectors) const override
+    {
+
+        return vectors.transpose() * weights;
+    }
 
 public:
     ~LinearRegression() override
     {
-    }
-    Vector1d predict(const Eigen::VectorXd &vector) const override
-    {
-        return vector.transpose() * weights;
-    }
-    Eigen::VectorXd predict(const Eigen::MatrixXd &vectors) const override
-    {
-        return vectors.transpose() * weights;
     }
     LinearRegression &with_L2_regulatization(double new_lambda)
     {
@@ -141,6 +181,8 @@ public:
 
 //TODO: implement SVM and Logistic Regression classes
 
+// Convert Proxy Classes
+//TODO: implement Vector and Array conversions if possible
 template <Supported TargetType, Supported... TupleTypes>
 class RegressionModelProxy
 {
@@ -155,7 +197,7 @@ public:
     void fit(const std::vector<std::tuple<TupleTypes...>> &data, const std::vector<TargetType> &targets)
     {
         auto converted_data = convert_from_std<TupleTypes...>(data);
-        auto converted_targets = convert_from_std<TargetType>(targets);
+        auto converted_targets = VectorConverter::convert_from_std<TargetType>(targets);
         model.fit(converted_data, converted_targets);
     }
 
@@ -163,7 +205,7 @@ public:
     {
         auto converted_vector = convert_from_std<TupleTypes...>(tuple);
         Vector1d value = model.predict(converted_vector);
-        TargetType ret_value = convert_to<TargetType>(value[0]);
+        TargetType ret_value = SingleValueConverter::convert_to<TargetType>(value[0]);
         return ret_value;
     }
 
@@ -171,7 +213,7 @@ public:
     {
         auto converted_matrix = convert_from_std<TupleTypes...>(tuples);
         auto value_vector = model.predict(converted_matrix);
-        std::vector<TargetType> ret_values = convert_to_std<TargetType>(value_vector);
+        std::vector<TargetType> ret_values = VectorConverter::convert_to_std<TargetType>(value_vector);
         return ret_values;
     }
 };
@@ -191,7 +233,7 @@ public:
     void fit(const std::vector<std::tuple<TupleTypes...>> &data, const std::vector<TargetType> &targets)
     {
         auto converted_data = convert_from_std(data);
-        auto converted_targets = convert_from_std(targets, label_map);
+        auto converted_targets = VectorConverter::convert_from_std(targets, label_map);
         model.fit(converted_data, converted_targets);
     }
     TargetType predict(const std::tuple<TupleTypes...> &tuple)
@@ -205,13 +247,7 @@ public:
     {
         auto converted_matrix = convert_from_std<TupleTypes...>(tuples);
         auto values = model.predict(converted_matrix);
-        std::vector<TargetType> ret_values;
-        std::size_t length = values.size();
-        for (size_t i = 0; i < length; i++)
-        {
-            TargetType ret_value = label_map.find(values[i])->second;
-            ret_values.push_back(ret_value);
-        }
+        auto ret_values = convert_to_std(values, label_map);
         return ret_values;
     }
 };
