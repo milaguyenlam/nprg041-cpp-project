@@ -1,9 +1,11 @@
 #include <chrono>
 #include <vector>
+#include <map>
 #include "Eigen/Core"
 
-//TODO: convert_to<time_point>() implementation
-//TODO: std::time_t support?
+template <typename T>
+concept SupportedClassificationTargets = std::is_same<T, int>::value || std::is_same<T, std::string>::value || std::is_same<T, char>::value || std::is_same<T, long>::value;
+
 template <typename T>
 concept SupportedTimePoints =
     std::is_same_v<T, std::chrono::time_point<typename T::clock, typename T::duration>>;
@@ -135,6 +137,32 @@ Eigen::MatrixXd convert_from_std(const std::vector<std::tuple<From...>> &tuples)
             ret_matrix(j, i) = value;
         }
     }
-
     return ret_matrix;
+}
+
+template <SupportedClassificationTargets TargetType>
+Eigen::VectorXi convert_from_std(const std::vector<TargetType> &targets, std::map<int, TargetType> &converter)
+{
+    //TODO: test if map is empty
+    std::map<TargetType, int> helper_map;
+    std::size_t length = targets.size();
+    Eigen::VectorXi ret_vector(length);
+    int counter = 0;
+    for (std::size_t i = 0; i < length; i++)
+    {
+        auto target = targets[i];
+        if (helper_map.count(target) > 0)
+        {
+            int key = helper_map.find(target)->second;
+            ret_vector[i] = key;
+        }
+        else
+        {
+            helper_map.insert(std::pair<TargetType, int>(target, counter));
+            converter.insert(std::pair<int, TargetType>(counter, target));
+            ret_vector[i] = counter;
+            counter++;
+        }
+    }
+    return ret_vector;
 }

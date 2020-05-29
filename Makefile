@@ -4,7 +4,7 @@
 
 # Compiler settings - Can be customized.
 CC = g++
-CXXFLAGS = -std=gnu++2a -Wall -g -fconcepts
+CXXFLAGS = -std=gnu++2a -Wall -g -fconcepts -O0 -DDEBUG
 LDFLAGS = 
 
 # Makefile settings - Can be customized.

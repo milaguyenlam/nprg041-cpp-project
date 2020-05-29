@@ -3,9 +3,11 @@
 #include <string>
 #include <iostream>
 #include <map>
+#include <set>
 #include "convert_util.hpp"
 
 using Vector1d = Eigen::Matrix<double, 1, 1>;
+using Vector1i = Eigen::Matrix<int, 1, 1>;
 
 //TODO: add include guards
 //TODO: consider deduction guides
@@ -35,21 +37,21 @@ public:
 class ClassificationModel : public Model
 {
 protected:
-    virtual void training_algorithm(const Eigen::MatrixXd &dataset, const Eigen::VectorXd &targets) = 0;
+    virtual void training_algorithm(const Eigen::MatrixXd &dataset, const Eigen::VectorXi &targets) = 0;
     std::map<int, int> label_map;
 
 public:
     ~ClassificationModel() override
     {
     }
-    void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXd &training_targets)
+    void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXi &training_targets)
     {
         auto padded_data = pad_dataset_with_ones(training_data);
         //TODO: map targets to inner targets
         training_algorithm(padded_data, training_targets);
     }
-    virtual Vector1d predict(const Eigen::VectorXd &vector) const = 0;
-    virtual Eigen::VectorXd predict(const Eigen::MatrixXd &vectors) const = 0;
+    virtual Vector1i predict(const Eigen::VectorXd &vector) const = 0;
+    virtual Eigen::VectorXi predict(const Eigen::MatrixXd &vectors) const = 0;
 };
 
 class RegressionModel : public Model
@@ -170,6 +172,46 @@ public:
         auto converted_matrix = convert_from_std<TupleTypes...>(tuples);
         auto value_vector = model.predict(converted_matrix);
         std::vector<TargetType> ret_values = convert_to_std<TargetType>(value_vector);
+        return ret_values;
+    }
+};
+
+//TODO: create concept for classification target type
+template <typename TargetType, Supported... TupleTypes>
+class ClassificationModelProxy
+{
+private:
+    ClassificationModel &model;
+    std::map<int, TargetType> label_map;
+
+public:
+    ClassificationModelProxy(ClassificationModel &model_to_wrap) : model(model_to_wrap)
+    {
+    }
+    void fit(const std::vector<std::tuple<TupleTypes...>> &data, const std::vector<TargetType> &targets)
+    {
+        auto converted_data = convert_from_std(data);
+        auto converted_targets = convert_from_std(targets, label_map);
+        model.fit(converted_data, converted_targets);
+    }
+    TargetType predict(const std::tuple<TupleTypes...> &tuple)
+    {
+        auto converted_vector = convert_from_std<TupleTypes...>(tuple);
+        auto value = model.predict(converted_vector);
+        TargetType ret_value = label_map.find(value[0])->second;
+        return ret_value;
+    }
+    std::vector<TargetType> predict(const std::vector<std::tuple<TupleTypes...>> &tuples)
+    {
+        auto converted_matrix = convert_from_std<TupleTypes...>(tuples);
+        auto values = model.predict(converted_matrix);
+        std::vector<TargetType> ret_values;
+        std::size_t length = values.size();
+        for (size_t i = 0; i < length; i++)
+        {
+            TargetType ret_value = label_map.find(values[i])->second;
+            ret_values.push_back(ret_value);
+        }
         return ret_values;
     }
 };

@@ -1,7 +1,8 @@
 //#include "../include/model.hpp"
+
+#include "../include/convert_util.hpp"
 #include <iostream>
 #include <tuple>
-#include "../include/convert_util.hpp"
 
 using namespace std;
 
@@ -22,7 +23,9 @@ int main()
     auto edataset = convert_from_std(dataset);
     auto etargets = convert_from_std(targets);
 
-    auto matrix = convert_to_std<float>(edataset);
+    map<int, string> converter;
+    std::vector<string> string_targets{"ahoj", "cau", "ahoj", "ahoj", "nazdar", "cau"};
+    auto estring_targets = convert_from_std(string_targets, converter);
 
-    auto vector = make_tuple(50, 50, 50);
+    cout << etargets << endl;
 }
