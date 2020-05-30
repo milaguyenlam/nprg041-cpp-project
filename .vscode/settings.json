@@ -61,5 +61,6 @@
     "thread": "cpp",
     "cinttypes": "cpp",
     "valarray": "cpp"
-  }
+  },
+  "python.pythonPath": "/usr/bin/python3"
 }

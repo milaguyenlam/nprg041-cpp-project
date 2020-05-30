@@ -4,7 +4,7 @@
 #include "Eigen/Core"
 
 //TODO: add include guards
-//add array conversions
+//TODO: add array conversions
 
 template <typename T>
 concept SupportedClassificationTargets = std::is_same<T, int>::value || std::is_same<T, std::string>::value || std::is_same<T, char>::value || std::is_same<T, long>::value;
@@ -369,7 +369,6 @@ Eigen::MatrixXd convert_from_std(const std::vector<std::tuple<From...>> &tuples)
 // template <SupportedClassificationTargets TargetType>
 // Eigen::VectorXi convert_from_std(const std::vector<TargetType> &vector, std::map<int, TargetType> &converter)
 // {
-//     //TODO: test if map is empty
 //     std::map<TargetType, int> helper_map;
 //     std::size_t length = vector.size();
 //     Eigen::VectorXi ret_vector(length);
