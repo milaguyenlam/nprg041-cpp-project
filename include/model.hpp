@@ -8,13 +8,13 @@
 #include <cmath>
 #include <cstdlib>
 #include "convert_util.hpp"
+#include "model_exceptions.hpp"
 
 using Vector1d = Eigen::Matrix<double, 1, 1>;
 using Vector1i = Eigen::Matrix<int, 1, 1>;
 
 //TODO: add include guards
-//TODO: consider deduction guides
-//TODO: model constructor overloads
+//TODO: consider deduction guides for proxy classes
 
 class Model
 {
@@ -80,6 +80,11 @@ public:
     }
     void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXi &training_targets)
     {
+        if (training_data.cols() != training_targets.size())
+        {
+            throw InvalidTrainingDataFormat();
+        }
+        training_data_dimension = training_data.rows();
         if (apply_padding)
         {
             auto padded_data = pad_matrix_with_ones(training_data);
@@ -89,9 +94,18 @@ public:
         {
             training_algorithm(training_data, training_targets);
         }
+        trained = true;
     }
     Vector1i predict(const Eigen::VectorXd &vector) const
     {
+        if (training_data_dimension != vector.size())
+        {
+            throw InvalidPredictDataFormat();
+        }
+        if (!trained)
+        {
+            throw PredictBeforeFit();
+        }
         if (apply_padding)
         {
             auto padded_vector = pad_vector_with_ones(vector);
@@ -104,6 +118,14 @@ public:
     }
     Eigen::VectorXi predict(const Eigen::MatrixXd &vectors) const
     {
+        if (training_data_dimension != vectors.rows())
+        {
+            throw InvalidPredictDataFormat();
+        }
+        if (!trained)
+        {
+            throw PredictBeforeFit();
+        }
         if (apply_padding)
         {
             auto padded_vectors = pad_matrix_with_ones(vectors);
@@ -116,6 +138,8 @@ public:
     }
 
 private:
+    bool trained = false;
+    long int training_data_dimension;
     void check_targets(const Eigen::VectorXi &targets)
     {
         std::set<int> found_target_labels;
@@ -129,12 +153,12 @@ private:
         {
             if (!found_target_labels.contains(i))
             {
-                //throw exception - INVALID_TARGET_FORMAT
+                throw InvalidTargetFormat();
             }
         }
         if ((elements_count != 2) && binary_classification)
         {
-            //throw exception - BINARY_LABELS_EXPECTED
+            throw BinaryLabelsExpected();
         }
     }
 };
@@ -153,6 +177,11 @@ public:
     }
     void fit(const Eigen::MatrixXd &training_data, const Eigen::VectorXd &training_targets)
     {
+        if (training_data.cols() != training_targets.size())
+        {
+            throw InvalidTrainingDataFormat();
+        }
+        training_data_dimension = training_data.rows();
         if (apply_padding)
         {
             auto padded_data = pad_matrix_with_ones(training_data);
@@ -162,9 +191,18 @@ public:
         {
             training_algorithm(training_data, training_targets);
         }
+        trained = true;
     }
     Vector1d predict(const Eigen::VectorXd &vector) const
     {
+        if (training_data_dimension != vector.size())
+        {
+            throw InvalidPredictDataFormat();
+        }
+        if (!trained)
+        {
+            throw PredictBeforeFit();
+        }
         if (apply_padding)
         {
             auto padded_vector = pad_vector_with_ones(vector);
@@ -177,6 +215,14 @@ public:
     }
     Eigen::VectorXd predict(const Eigen::MatrixXd &vectors) const
     {
+        if (training_data_dimension != vectors.rows())
+        {
+            throw InvalidPredictDataFormat();
+        }
+        if (!trained)
+        {
+            throw PredictBeforeFit();
+        }
         if (apply_padding)
         {
             auto padded_vectors = pad_matrix_with_ones(vectors);
@@ -187,6 +233,10 @@ public:
             return make_prediction(vectors);
         }
     }
+
+private:
+    bool trained = false;
+    long int training_data_dimension;
 };
 
 class LinearRegression : public RegressionModel
@@ -334,7 +384,7 @@ public:
         return *this;
     }
 };
-//TODO: do not use padding for SVM model
+
 class BinarySVM : public ClassificationModel
 {
 protected:
@@ -347,12 +397,6 @@ protected:
         weights = Eigen::VectorXd(dataset_size).setZero();
         b = 0;
         compute_kernel_values(dataset);
-        std::cout << kernel_values << std::endl
-                  << train_targets << std::endl
-                  << targets << std::endl
-                  << train_data << std::endl
-                  << weights << std::endl;
-
         std::size_t passes = 0;
         while (passes < max_passes)
         {
@@ -430,8 +474,6 @@ protected:
                 passes++;
             }
         }
-        std::cout << weights << std::endl
-                  << b << std::endl;
     }
     Vector1i make_prediction(const Eigen::VectorXd &vector) const override
     {
@@ -544,10 +586,8 @@ public:
     }
 };
 
-//TODO: implement SVM
-
 // Convert Proxy Classes
-//TODO: implement Vector and Array conversions if possible
+
 template <Supported TargetType, Supported... TupleTypes>
 class RegressionModelProxy
 {
