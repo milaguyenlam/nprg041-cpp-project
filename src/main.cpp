@@ -2,7 +2,10 @@
 #include <iostream>
 #include <tuple>
 
+//TODO: program examples
+
 using namespace std;
+using namespace mllib;
 
 int main()
 {

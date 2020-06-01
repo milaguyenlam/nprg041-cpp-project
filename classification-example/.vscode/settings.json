@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "tuple": "cpp",
+        "limits": "cpp",
+        "functional": "cpp",
+        "typeinfo": "cpp"
+    }
+}

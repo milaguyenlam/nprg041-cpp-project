@@ -110,4 +110,6 @@ obj/main.o: src/main.cpp src/../include/model.hpp \
  src/../include/Eigen/src/Core/Reverse.h \
  src/../include/Eigen/src/Core/ArrayWrapper.h \
  src/../include/Eigen/src/Core/GlobalFunctions.h \
- src/../include/Eigen/src/Core/util/ReenableStupidWarnings.h
+ src/../include/Eigen/src/Core/util/ReenableStupidWarnings.h \
+ src/../include/convert_util_exceptions.hpp \
+ src/../include/model_exceptions.hpp
