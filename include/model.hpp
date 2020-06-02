@@ -847,4 +847,47 @@ namespace mllib
             return ret_values;
         }
     };
+
+    double compute_classification_accuracy(Eigen::VectorXi &predicted, Eigen::VectorXi &actual)
+    {
+        std::size_t predicted_size = predicted.size();
+        std::size_t actual_size = actual.size();
+        if (predicted_size != actual_size)
+        {
+            //throw exception
+        }
+        std::size_t correct_counter = 0;
+        for (size_t i = 0; i < predicted_size; i++)
+        {
+            if (predicted[i] == actual[i])
+            {
+                correct_counter++;
+            }
+        }
+
+        return (double)correct_counter / (double)predicted_size;
+    }
+
+    double compute_mse(Eigen::VectorXd &predicted, Eigen::VectorXd &actual)
+    {
+        return 0.75;
+    }
+
+    template <SupportedClassificationTargets TargetType>
+    double compute_classification_accuracy(std::vector<TargetType> &predicted, std::vector<TargetType> &actual)
+    {
+        std::map<int, TargetType> map1;
+        std::map<int, TargetType> map2;
+        auto converted_predicted = VectorConverter::convert_from_std<TargetType>(predicted, map1);
+        auto converted_actual = VectorConverter::convert_from_std<TargetType>(actual, map2);
+        return compute_classification_accuracy(converted_predicted, converted_actual);
+    }
+
+    template <Supported TargetType>
+    double compute_mse(std::vector<TargetType> &predicted, std::vector<TargetType> &actual)
+    {
+        auto converted_predicted = VectorConverter::convert_from_std<TargetType>(predicted);
+        auto converted_actual = VectorConverter::convert_from_std<TargetType>(predicted);
+        return compute_mse(converted_predicted, converted_actual);
+    }
 } // namespace mllib
