@@ -88,7 +88,7 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
 - available conversion methods (implemented in convert_utils.hpp), divided into static classes
 
   ```cpp
-    //static class used for converting between double and supported types (both directions)
+    //static class used for converting between double and Supported types (both directions)
     class SingleValueConverter
     {
     public:
@@ -103,7 +103,7 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
         static To convert_to(double value);
     };
 
-    //class used for converting std::vector as a vector from/to Eigen data types
+    //class used for converting std::vector of Supported (or SupportedClassificationTargets) from/to Eigen data types
     //uses From, To of Supported types as type paramaters
     class VectorConverter
     {
@@ -131,7 +131,7 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
         static std::vector<TargetType> convert_to_std(const Eigen::VectorXi &vector, const std::map<int, TargetType> &converter);
     };
 
-    //methods for std::tuple conversion
+    //methods for std::tuple of Supported types conversion
     //putting them into a class did not work, see https://gcc.gnu.org/bugzilla//show_bug.cgi?id=79917
     //they are left as global methods as a temporary solution
 

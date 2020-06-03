@@ -848,6 +848,8 @@ namespace mllib
         }
     };
 
+    //TODO: test mse
+
     //method computing accuracy from Eigen vectors of int, one with predicted values, the other with actual targets
     //accuracy = correctly_predicted / number_of_predictions
     double compute_classification_accuracy(Eigen::VectorXi &predicted, Eigen::VectorXi &actual)
