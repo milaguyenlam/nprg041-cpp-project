@@ -1,3 +1,5 @@
+#ifndef MLLIB_MODEL_HPP
+#define MLLIB_MODEL_HPP
 #include <vector>
 #include <tuple>
 #include <string>
@@ -7,10 +9,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include "Eigen/Core"
 #include "convert_util.hpp"
 #include "model_exceptions.hpp"
-
-//TODO: add include guards
+#include "metrics.hpp"
 
 namespace mllib
 {
@@ -302,7 +304,7 @@ namespace mllib
     //regularization lambda = 0
     //iterations = 100
     //sgd learning rate = 0.01
-    class RidgeRegression : public RegressionModel
+    class LinearRegression : public RegressionModel
     {
     private:
         //L2 regularization
@@ -325,13 +327,13 @@ namespace mllib
                 //iterate through every input sample
                 for (std::size_t i = 0; i < data_length; i++)
                 {
-                    Eigen::VectorXd input_vector = data.col(i);                          //get i-th sample
-                    double target = targets(i);                                          //get its corresponding target
-                    auto prediction = (make_prediction(input_vector))(0, 0);             //compute prediction
-                    auto regularization = lambda * weights;                              //compute l2 regularization
-                    auto error = prediction - target;                                    //compute error
-                    auto step = learning_rate * (error * input_vector) + regularization; //compute sgd step
-                    weights = weights - step;                                            //update weights/coeffs
+                    Eigen::VectorXd input_vector = data.col(i);                                          //get i-th sample
+                    double target = targets(i);                                                          //get its corresponding target
+                    auto prediction = (make_prediction(input_vector))(0, 0);                             //compute prediction
+                    auto regularization = lambda * weights;                                              //compute l2 regularization
+                    auto error = prediction - target;                                                    //compute error
+                    auto step = learning_rate * ((error * input_vector) / data_length + regularization); //compute sgd step
+                    weights = weights - step;                                                            //update weights/coeffs
                 }
             }
         }
@@ -347,26 +349,26 @@ namespace mllib
         }
 
     public:
-        ~RidgeRegression() override
+        ~LinearRegression() override
         {
         }
         //default: 0
         //sets lambda
-        RidgeRegression &with_L2_regulatization(double new_lambda)
+        LinearRegression &with_L2_regulatization(double new_lambda)
         {
             lambda = new_lambda;
             return *this;
         }
         //default: 100
         //sets number of iterations training should do
-        RidgeRegression &set_iterations(std::size_t new_iterations)
+        LinearRegression &set_iterations(std::size_t new_iterations)
         {
             iterations = new_iterations;
             return *this;
         }
         //default: 0.01
         //sets learning rate
-        RidgeRegression &set_learning_rate(double alpha)
+        LinearRegression &set_learning_rate(double alpha)
         {
             learning_rate = alpha;
             return *this;
@@ -847,70 +849,6 @@ namespace mllib
             return ret_values;
         }
     };
-
-    //TODO: test mse
-
-    //method computing accuracy from Eigen vectors of int, one with predicted values, the other with actual targets
-    //accuracy = correctly_predicted / number_of_predictions
-    double compute_classification_accuracy(Eigen::VectorXi &predicted, Eigen::VectorXi &actual)
-    {
-        std::size_t predicted_size = predicted.size();
-        std::size_t actual_size = actual.size();
-        if (predicted_size != actual_size)
-        {
-            //throw exception
-        }
-        std::size_t correct_counter = 0;
-        for (size_t i = 0; i < predicted_size; i++)
-        {
-            if (predicted[i] == actual[i])
-            {
-                correct_counter++;
-            }
-        }
-
-        return (double)correct_counter / (double)predicted_size;
-    }
-
-    //method for computing mean squared error from Eigen vectors of double, one with predicted values, the other with actual targets
-    //mse = sum((prediction - actual_value)^2) / number_of_predictions
-    double compute_mse(Eigen::VectorXd &predicted, Eigen::VectorXd &actual)
-    {
-        std::size_t predicted_size = predicted.size();
-        std::size_t actual_size = actual.size();
-        if (predicted_size != actual_size)
-        {
-            //throw exception
-        }
-        double sum = 0;
-        for (size_t i = 0; i < predicted_size; i++)
-        {
-            sum += std::pow(predicted[i] - actual[i], 2);
-        }
-        return sum / (double)predicted_size;
-    }
-
-    //wrapper for std type vector representations
-    //method computing accuracy from Eigen vectors of int, one with predicted values, the other with actual targets
-    //accuracy = correctly_predicted / number_of_predictions
-    template <SupportedClassificationTargets TargetType>
-    double compute_classification_accuracy(std::vector<TargetType> &predicted, std::vector<TargetType> &actual)
-    {
-        std::map<int, TargetType> map1;
-        std::map<int, TargetType> map2;
-        auto converted_predicted = VectorConverter::convert_from_std<TargetType>(predicted, map1);
-        auto converted_actual = VectorConverter::convert_from_std<TargetType>(actual, map2);
-        return compute_classification_accuracy(converted_predicted, converted_actual);
-    }
-
-    //wrapper for std type vector representations
-    //method for computing mean squared error from Eigen vectors of double, one with predicted values, the other with actual targets
-    //mse = sum((prediction - actual_value)^2) / number_of_predictions
-    template <Supported TargetType>
-    double compute_mse(std::vector<TargetType> &predicted, std::vector<TargetType> &actual)
-    {
-        auto converted_predicted = VectorConverter::convert_from_std<TargetType>(predicted);
-        auto converted_actual = VectorConverter::convert_from_std<TargetType>(predicted);
-        return compute_mse(converted_predicted, converted_actual);
-    }
 } // namespace mllib
+
+#endif

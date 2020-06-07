@@ -1,10 +1,11 @@
+#ifndef MLLIB_CONVERT_HPP
+#define MLLIB_CONVERT_HPP
+
 #include <chrono>
 #include <vector>
 #include <map>
 #include "Eigen/Core"
 #include "convert_util_exceptions.hpp"
-
-//TODO: add include guards
 
 namespace convert
 {
@@ -249,3 +250,5 @@ namespace convert
     }
 
 } // namespace convert
+
+#endif

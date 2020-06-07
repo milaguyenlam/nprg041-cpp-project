@@ -2,60 +2,52 @@
 #include <iostream>
 #include <cmath>
 #include "../../include/model.hpp"
+#include "../../include/metrics.hpp"
 
 using namespace io;
 using namespace std;
+using namespace mllib;
+using namespace metrics;
 
-using regression_targets = vector<float>;
-using regression_dataset = vector<tuple<int, int, int, int, double, int, int, int>>;
-
-double mean_error(const regression_targets &predicted, const regression_targets &actual)
-{
-    std::size_t total_count = predicted.size();
-    float error_sum = 0;
-    for (size_t i = 0; i < total_count; i++)
-    {
-        error_sum += std::abs(predicted[i] - actual[i]);
-    }
-    return error_sum / (double)total_count;
-}
+using regression_targets = vector<double>;
+using regression_dataset = vector<tuple<double, double, double, double, double, double>>;
 
 int main()
 {
-    CSVReader<9> train_parser("./resources/titanic-train.csv");
-    CSVReader<9> eval_parser("./resources/titanic-eval.csv");
-    int survived;
-    int sex;
-    float age;
-    int family_count;
-    int parch;
-    double fair;
-    int first_class_flag;
-    int second_class_flag;
-    int alone_flag;
+    CSVReader<7> train_parser("./resources/train_data.csv");
+    CSVReader<7> eval_parser("./resources/eval_data.csv");
+
+    double f1;
+    double f2;
+    double f3;
+    double f4;
+    double f5;
+    double f6;
+    double target;
 
     regression_targets train_targets;
     regression_dataset train_dataset;
     regression_targets eval_targets;
     regression_dataset eval_dataset;
 
-    while (train_parser.read_row(survived, sex, age, family_count, parch, fair, first_class_flag, second_class_flag, alone_flag))
+    while (train_parser.read_row(f1, f2, f3, f4, f5, f6, target))
     {
-        train_targets.push_back(age);
-        train_dataset.push_back(make_tuple(survived, sex, family_count, parch, fair, first_class_flag, second_class_flag, alone_flag));
+        train_targets.push_back(target);
+        train_dataset.push_back(make_tuple(f1, f2, f3, f4, f5, f6));
     }
 
-    while (eval_parser.read_row(survived, sex, age, family_count, parch, fair, first_class_flag, second_class_flag, alone_flag))
+    while (eval_parser.read_row(f1, f2, f3, f4, f5, f6, target))
     {
-        eval_targets.push_back(age);
-        eval_dataset.push_back(make_tuple(survived, sex, family_count, parch, fair, first_class_flag, second_class_flag, alone_flag));
+        eval_targets.push_back(target);
+        eval_dataset.push_back(make_tuple(f1, f2, f3, f4, f5, f6));
     }
 
-    RidgeRegression lin_reg;
+    LinearRegression lin_reg;
+    lin_reg.set_iterations(1000);
 
     RegressionModelProxy lin_reg_proxy(lin_reg, train_dataset, train_targets);
 
     regression_targets predictions = lin_reg_proxy.predict(eval_dataset);
 
-    cout << "linear regression mean error: " << mean_error(predictions, eval_targets) << endl;
+    cout << "linear regression mean squared error: " << compute_mse(predictions, eval_targets) << endl;
 }

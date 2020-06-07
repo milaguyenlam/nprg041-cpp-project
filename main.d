@@ -1,5 +1,5 @@
 obj/main.o: src/main.cpp src/../include/model.hpp \
- src/../include/convert_util.hpp src/../include/Eigen/Core \
+ src/../include/Eigen/Core \
  src/../include/Eigen/src/Core/util/DisableStupidWarnings.h \
  src/../include/Eigen/src/Core/util/Macros.h \
  src/../include/Eigen/src/Core/util/MKL_support.h \
@@ -111,5 +111,7 @@ obj/main.o: src/main.cpp src/../include/model.hpp \
  src/../include/Eigen/src/Core/ArrayWrapper.h \
  src/../include/Eigen/src/Core/GlobalFunctions.h \
  src/../include/Eigen/src/Core/util/ReenableStupidWarnings.h \
+ src/../include/convert_util.hpp \
  src/../include/convert_util_exceptions.hpp \
- src/../include/model_exceptions.hpp
+ src/../include/model_exceptions.hpp src/../include/metrics.hpp \
+ src/../include/metrics_exceptions.hpp

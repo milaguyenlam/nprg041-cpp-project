@@ -45,6 +45,7 @@ void create_testing_data(vector<tuple<double, double>> &to_predict, vector<strin
 }
 
 using namespace mllib;
+using namespace metrics;
 
 int main()
 {
@@ -99,5 +100,4 @@ int main()
     //you can use built-in method for computing accuracy and mse
     cout << "svm model accuracy: " << compute_classification_accuracy(svm_predicted_values, test_targets) * 100.0 << "%" << endl
          << "perceptron model accuracy: " << compute_classification_accuracy(perc_predicted_values, test_targets) * 100.0 << "%" << endl;
-
 }

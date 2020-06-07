@@ -5,23 +5,11 @@
 
 using namespace io;
 using namespace std;
+using namespace mllib;
+using namespace metrics;
 
 using classification_targets = vector<int>;
 using classification_dataset = vector<tuple<int, float, int, int, double, int, int, int>>;
-
-double accuracy(const classification_targets &predicted, const classification_targets &actual)
-{
-    int total_count = predicted.size();
-    int correctly_classified = 0;
-    for (int i = 0; i < total_count; i++)
-    {
-        if (predicted[i] == actual[i])
-        {
-            correctly_classified++;
-        }
-    }
-    return (double)correctly_classified / (double)total_count;
-}
 
 int main()
 {
@@ -54,7 +42,9 @@ int main()
         eval_dataset.push_back(make_tuple(sex, age, family_count, parch, fair, first_class_flag, second_class_flag, alone_flag));
     }
     Perceptron perceptron;
+    perceptron.set_max_iterations(1000);
     BinarySVM svm;
+    svm.set_max_iterations(5000);
 
     ClassificationModelProxy<int, int, float, int, int, double, int, int, int>
         perceptron_proxy(perceptron);
@@ -65,6 +55,6 @@ int main()
     classification_targets perceptron_predictions = perceptron_proxy.predict(eval_dataset);
     classification_targets svm_predictions = perceptron_proxy.predict(eval_dataset);
 
-    cout << "perceptron accuracy: " << accuracy(perceptron_predictions, eval_targets) << endl
-         << "svm accuracy: " << accuracy(svm_predictions, eval_targets) << endl;
+    cout << "perceptron accuracy: " << compute_classification_accuracy(perceptron_predictions, eval_targets) << endl
+         << "svm accuracy: " << compute_classification_accuracy(svm_predictions, eval_targets) << endl;
 }

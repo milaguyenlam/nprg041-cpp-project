@@ -8,6 +8,11 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
 - Conversion between certain std data types and Eigen classes is covered by a suite of conversion methods.
 - You can also use proxy classes to fully automate the conversion process and use model "directly" with supported std types.
 
+## Installation
+
+Mllib is a template library defined in the headers. You can use header files (in ./include folder of the project) right away (just copy them to your include path).
+Note that, there has to be Eigen/Core library present in include path as well. (As it is in the project).
+
 ## Usage
 
 - example demonstrating basic usage of the library
@@ -85,7 +90,7 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
   - `Supported` = {int, double, float, long, std::chrono::time_point<>
   - `SupportedClassificationTargets` = {int, long, string, char}
 
-- available conversion methods (implemented in convert_utils.hpp), divided into static classes
+- available conversion methods (implemented in convert_utils.hpp), divided into static classes - `namespace convert`
 
   ```cpp
     //static class used for converting between double and Supported types (both directions)
@@ -144,7 +149,7 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
     Eigen::MatrixXd convert_from_std(const std::vector<std::tuple<From...>> &tuples);
   ```
 
-- available machine learning models:
+- available machine learning models - `namespace mllib`
 
   - `RegressionModel`
 
@@ -251,11 +256,11 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
       Perceptron &set_learning_rate(double rate);
       ```
 
-    - information about training converging while training can be accessed by `bool was_dataset_separated()` method
+    - information about convergence during training can be accessed by `bool was_dataset_separated()` method
 
-  - `RidgeRegression`
+  - `LinearRegression`
 
-    - model using SGD linear regression algorithm (with L2 regularization) to train weights
+    - model using SGD(regular) linear regression algorithm (additionally with L2 regularization) to train weights
     - training algorithm doesn't always have to converge (when dataset is not linearly separable)
     - inherits from `RegressionModel` class, therefore inherits its fit() and predict() methods
     - can be modified by following methods (fluent interface/ method chaining)
@@ -263,18 +268,18 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
       ```cpp
       //default: 0
       //sets lambda
-      RidgeRegression &with_L2_regulatization(double new_lambda);
+      LinearRegression &with_L2_regulatization(double new_lambda);
 
       //default: 100
       //sets number of iterations training should do
-      RidgeRegression &set_iterations(std::size_t new_iterations);
+      LinearRegression &set_iterations(std::size_t new_iterations);
 
       //default: 0.01
       //sets learning rate
-      RidgeRegression &set_learning_rate(double alpha);
+      LinearRegression &set_learning_rate(double alpha);
       ```
 
-- proxy classes for conversion automation:
+- proxy classes for conversion automation - `namespace mllib`
 
   - `RegressionModelProxy`
 
@@ -341,26 +346,30 @@ MLLIB is a C++ library for basic machine learning, built on top of Eigen library
 
     ```
 
-- basic metrics measuring methods:
+- basic metrics measuring methods - `namespace metrics`
 
   ```cpp
     //method computing accuracy from Eigen vectors of int, one with predicted values, the other with actual targets
     //accuracy = correctly_predicted / number_of_predictions
+    //throws exception data predicted vector's lenght doesn't equal actual's lenght
     double compute_classification_accuracy(Eigen::VectorXi &predicted, Eigen::VectorXi &actual);
 
     //method for computing mean squared error from Eigen vectors of double, one with predicted values, the other with actual targets
     //mse = sum((prediction - actual_value)^2) / number_of_predictions
+    //throws exception data predicted vector's lenght doesn't equal actual's lenght
     double compute_mse(Eigen::VectorXd &predicted, Eigen::VectorXd &actual);
 
     //wrapper for std type vector representations
     //method computing accuracy from Eigen vectors of int, one with predicted values, the other with actual targets
     //accuracy = correctly_predicted / number_of_predictions
+    //throws exception data predicted vector's lenght doesn't equal actual's lenght
     template <SupportedClassificationTargets TargetType>
     double compute_classification_accuracy(std::vector<TargetType> &predicted, std::vector<TargetType> &actual);
 
     //wrapper for std type vector representations
     //method for computing mean squared error from Eigen vectors of double, one with predicted values, the other with actual targets
     //mse = sum((prediction - actual_value)^2) / number_of_predictions
+    //throws exception data predicted vector's lenght doesn't equal actual's lenght
     template <Supported TargetType>
     double compute_mse(std::vector<TargetType> &predicted, std::vector<TargetType> &actual);
   ```
