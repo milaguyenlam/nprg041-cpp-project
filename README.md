@@ -87,7 +87,7 @@ Note that, there has to be Eigen/Core library present in include path as well. (
 
 - supported conversions defined by template concepts:
 
-  - `Supported` = {int, double, float, long, std::chrono::time_point<>
+  - `Supported` = {int, double, float, long, std::chrono::time_point<>}
   - `SupportedClassificationTargets` = {int, long, string, char}
 
 - available conversion methods (implemented in convert_utils.hpp), divided into static classes - `namespace convert`
